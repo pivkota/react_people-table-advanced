@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { PeopleTable } from './PeopleTable';
+import { PeopleFilters } from './PeopleFilters';
 import { Person } from '../types';
 import { getPeople } from '../api';
 
@@ -24,10 +25,10 @@ export const PeoplePage: React.FC = () => {
 
     const query = searchParams.get('query')?.toLowerCase();
     const sex = searchParams.get('sex');
+    const centuries = searchParams.getAll('centuries');
     const sort = searchParams.get('sort');
     const order = searchParams.get('order');
 
-    // Фільтрація по тексту
     if (query) {
       result = result.filter(
         p =>
@@ -41,7 +42,14 @@ export const PeoplePage: React.FC = () => {
       result = result.filter(p => p.sex === sex);
     }
 
-    // Сортування
+    if (centuries.length > 0) {
+      result = result.filter(p => {
+        const century = Math.ceil(p.born / 100).toString();
+
+        return centuries.includes(century);
+      });
+    }
+
     if (sort) {
       result.sort((a, b) => {
         const valA = a[sort as keyof Person] ?? '';
@@ -84,15 +92,27 @@ export const PeoplePage: React.FC = () => {
             <p>Loading...</p>
           </div>
         ) : (
-          <>
-            {filteredPeople.length > 0 ? (
-              <PeopleTable people={filteredPeople} />
-            ) : (
-              <p className="notification is-warning" data-cy="noPeopleMessage">
-                There are no people matching the search.
-              </p>
-            )}
-          </>
+          /* ТУТ МИ ЗАЛИШАЄМО ТІЛЬКИ ОДИН РЯД КОЛОНОК */
+          <div className="columns is-desktop is-tablet">
+            <div className="column is-one-quarter-desktop is-one-third-tablet">
+              <PeopleFilters /> {/* Тільки один раз! */}
+            </div>
+
+            <div className="column">
+              <div className="box table-container">
+                {filteredPeople.length > 0 ? (
+                  <PeopleTable people={filteredPeople} />
+                ) : (
+                  <p
+                    className="notification is-warning"
+                    data-cy="noPeopleMessage"
+                  >
+                    There are no people matching the search.
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </section>

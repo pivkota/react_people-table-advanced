@@ -1,15 +1,59 @@
-/* eslint-disable jsx-a11y/control-has-associated-label */
 import React from 'react';
-import { useLocation, Link, useParams } from 'react-router-dom';
+import {
+  useLocation,
+  Link,
+  useSearchParams,
+  useParams,
+} from 'react-router-dom';
 import { Person } from '../types';
 
 interface Props {
   people: Person[];
 }
 
+function getSearchWith(
+  params: URLSearchParams,
+  paramsToUpdate: { [key: string]: string | null },
+): string {
+  const newParams = new URLSearchParams(params.toString());
+
+  Object.entries(paramsToUpdate).forEach(([key, value]) => {
+    if (value === null) {
+      newParams.delete(key);
+    } else {
+      newParams.set(key, value);
+    }
+  });
+
+  return newParams.toString();
+}
+
 export const PeopleTable: React.FC<Props> = ({ people }) => {
   const location = useLocation();
   const { slug: selectedSlug } = useParams();
+  const [searchParams] = useSearchParams();
+  const sort = searchParams.get('sort');
+  const order = searchParams.get('order');
+
+  const renderSortIcon = (col: string) => {
+    if (sort !== col) {
+      return <i className="fas fa-sort" />;
+    }
+
+    return order === 'desc' ? (
+      <i className="fas fa-sort-down" />
+    ) : (
+      <i className="fas fa-sort-up" />
+    );
+  };
+
+  const getSortParams = (col: string) => {
+    if (sort === col && order !== 'desc') {
+      return { sort: col, order: 'desc' };
+    }
+
+    return { sort: col, order: null };
+  };
 
   return (
     <table
@@ -18,10 +62,24 @@ export const PeopleTable: React.FC<Props> = ({ people }) => {
     >
       <thead>
         <tr>
-          <th>Name</th>
-          <th>Sex</th>
-          <th>Born</th>
-          <th>Died</th>
+          {Object.entries({
+            name: 'Name',
+            sex: 'Sex',
+            born: 'Born',
+            died: 'Died',
+          }).map(([key, label]) => (
+            <th key={key}>
+              <Link
+                to={{
+                  search: getSearchWith(searchParams, getSortParams(key)),
+                }}
+                className="is-flex is-vcentered"
+              >
+                <span className="mr-1">{label}</span>
+                <span className="icon is-small">{renderSortIcon(key)}</span>
+              </Link>
+            </th>
+          ))}
           <th>Mother</th>
           <th>Father</th>
         </tr>
